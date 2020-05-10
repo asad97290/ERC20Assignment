@@ -1,0 +1,44 @@
+pragma solidity ^0.6.0;
+
+import "./ERC20.sol";
+
+
+contract MyToken is ERC20{
+    
+    uint256 private _tokens;
+    address private _tokenBuyer;
+    uint256 private _releaseTime;
+    uint256 private _cap;
+       
+    constructor (uint256 cap,uint256 tokens, address tokenBuyer, uint256 releaseTime)
+    ERC20("MYToken","MT",18,700)
+    public
+    {
+        require(cap > 0, "ERC20Capped: cap is 0");
+        _cap = cap;
+        
+        require(releaseTime > block.timestamp, "release time is not today ");
+        _tokens = tokens;
+        _tokenBuyer = tokenBuyer;
+        _releaseTime = releaseTime;
+   }
+    
+    function mint(uint256 tokens,address ownerAddress) onlyOwner public virtual{
+        require(tokens > 0 && ownerAddress !=address(0),"BCC1: Invalid Amount. Minted amount should be greater than 0 or mint to the zero address");
+        beforeTransfer(address(0), ownerAddress, tokens);
+        _totalSupply = safeAdd(_totalSupply,tokens);
+        balances[ownerAddress] = safeAdd(balances[ownerAddress],tokens);
+    }
+    function beforeTransfer(address _from,address to,uint256 tokens) internal view virtual{
+       // super._beforeTokenTransfer(_from, to, tokens);
+        if(_from == address(0)){//when minting tokens
+          require(safeAdd(_totalSupply,tokens) <= _cap ,"cap limit exceeded");
+      }
+    }
+    function release() public virtual {
+        require(block.timestamp >= _releaseTime, "TokenTimelock: current time is before release time");
+        _tokens = balanceOf(address(this));
+        require(_tokens > 0, "TokenTimelock: no tokens to release");
+        transfer(_tokenBuyer, _tokens);
+    }
+}

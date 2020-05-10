@@ -1,0 +1,115 @@
+pragma solidity ^0.6.0;
+
+import "./IERC20.sol";
+import "./SafeMath.sol";
+
+contract ERC20 is IERC20,SafeMath {
+    string private _name;
+    string private _symbol;
+    uint8 private _decimals;
+    uint256 public _totalSupply;
+    
+    address owner;
+    
+    mapping(address => uint) balances;
+    mapping(address => mapping(address => uint)) allowed;
+    
+
+constructor (string memory name, string memory symbol,uint8 decimals,uint256 totalSupply) public {
+        _name = name;
+        _symbol = symbol;
+        _decimals = decimals;
+        _totalSupply = totalSupply;
+        owner = msg.sender;
+        balances[msg.sender] = _totalSupply;
+        emit Transfer(address(0), msg.sender, _totalSupply);
+    }
+    
+    function totalSupply() 
+	public 
+	view 
+	override
+	returns (uint256) 
+{
+    return _totalSupply;
+}
+
+   function name() public view returns (string memory) {
+        return _name;
+    }
+
+    
+    function symbol() public view returns (string memory) {
+        return _symbol;
+    }
+
+    
+    function decimals() public view returns (uint8) {
+        return _decimals;
+    }
+
+function balanceOf(address tokenOwner) 
+	view 
+	public
+	override
+	returns (uint256 balance) 
+{
+    return balances[tokenOwner];
+}
+
+function allowance
+	(address tokenOwner, address spender) 
+	public
+	virtual
+	view 
+	override
+	returns (uint256 remaining) 
+{
+    return allowed[tokenOwner][spender];
+}
+    
+    function approve(address spender, uint256 tokens) 
+    virtual
+    public
+    override
+	returns 
+	(bool success) 
+{
+    allowed[msg.sender][spender] = tokens;
+    emit Approval(msg.sender, spender, tokens);
+    return true;
+    
+}
+
+function transfer(address to, uint256 tokens) 
+	virtual
+	public
+	override
+	returns (bool success) 
+{
+    balances[msg.sender] = safeSub(balances[msg.sender], tokens);
+    balances[to] = safeAdd(balances[to], tokens);
+
+    emit Transfer(msg.sender, to, tokens);
+    return true;
+}
+
+function transferFrom
+	(address from, address to, uint256 tokens) 
+	virtual
+	public
+	override
+	returns (bool success) 
+{
+    balances[from] = safeSub(balances[from], tokens);
+    allowed[from][owner] = safeSub(allowed[from][owner], tokens);
+    balances[to] = safeAdd(balances[to], tokens);
+        
+	emit Transfer(from, to, tokens);
+    return true;
+}
+ modifier onlyOwner(){
+        require(msg.sender == owner,"BCC1: Only owner can execute this feature");
+        _;
+    }
+}
